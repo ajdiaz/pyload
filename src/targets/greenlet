@@ -1,0 +1,6 @@
+#!/bin/bash
+
+target greenlet: libevent
+greenlet () {
+  uncompress "$GREENLET_URL" "$BUILD/greenlet"
+}

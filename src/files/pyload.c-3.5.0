@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <Python.h>
+#include <locale.h>
+
+static int RunModule(wchar_t *modname, int set_argv0)
+{
+    PyObject *module, *runpy, *runmodule, *runargs, *result;
+    runpy = PyImport_ImportModule("runpy");
+    if (runpy == NULL) {
+        fprintf(stderr, "Could not import runpy module\n");
+        PyErr_Print();
+        return -1;
+    }
+    runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
+    if (runmodule == NULL) {
+        fprintf(stderr, "Could not access runpy._run_module_as_main\n");
+        PyErr_Print();
+        Py_DECREF(runpy);
+        return -1;
+    }
+    module = PyUnicode_FromWideChar(modname, wcslen(modname));
+    if (module == NULL) {
+        fprintf(stderr, "Could not convert module name to unicode\n");
+        PyErr_Print();
+        Py_DECREF(runpy);
+        Py_DECREF(runmodule);
+        return -1;
+    }
+    runargs = Py_BuildValue("(Oi)", module, set_argv0);
+    if (runargs == NULL) {
+        fprintf(stderr,
+            "Could not create arguments for runpy._run_module_as_main\n");
+        PyErr_Print();
+        Py_DECREF(runpy);
+        Py_DECREF(runmodule);
+        Py_DECREF(module);
+        return -1;
+    }
+    result = PyObject_Call(runmodule, runargs, NULL);
+    if (result == NULL) {
+        PyErr_Print();
+    }
+    Py_DECREF(runpy);
+    Py_DECREF(runmodule);
+    Py_DECREF(module);
+    Py_DECREF(runargs);
+    if (result == NULL) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+
+
+static int
+RunMainFromImporter(wchar_t *filename)
+{
+    PyObject *argv0 = NULL, *importer, *sys_path;
+    int sts;
+
+    argv0 = PyUnicode_FromWideChar(filename, wcslen(filename));
+    if (argv0 == NULL)
+        goto error;
+
+    importer = PyImport_GetImporter(argv0);
+    if (importer == NULL)
+        goto error;
+
+    if (importer == Py_None) {
+        Py_DECREF(argv0);
+        Py_DECREF(importer);
+        return -1;
+    }
+    Py_DECREF(importer);
+
+    /* argv0 is usable as an import source, so put it in sys.path[0]
+       and import __main__ */
+    sys_path = PySys_GetObject("path");
+    if (sys_path == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.path");
+        goto error;
+    }
+    if (PyList_SetItem(sys_path, 0, argv0)) {
+        argv0 = NULL;
+        goto error;
+    }
+    Py_INCREF(argv0);
+
+    sts = RunModule(L"__main__", 0);
+    return sts != 0;
+
+error:
+    Py_XDECREF(argv0);
+    PyErr_Print();
+    return 1;
+}
+
+
+
+
+int
+main(int argc, char *argv[])
+{
+    wchar_t **argv_copy;
+    char *oldloc;
+    int i;
+
+
+    argv_copy = (wchar_t **)PyMem_Malloc(sizeof(wchar_t*) * (argc+1));
+    if (!argv_copy) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
+    oldloc = strdup(setlocale(LC_ALL, NULL));
+    if (!oldloc) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
+    setlocale(LC_ALL, "");
+    for (i = 0; i < argc; i++) {
+        argv_copy[i] =  Py_DecodeLocale(argv[i], NULL);
+        if (!argv_copy[i]) {
+            PyMem_Free(oldloc);
+            fprintf(stderr, "Fatal Python error: "
+                            "unable to decode the command line argument #%i\n",
+                            i + 1);
+            return 1;
+        }
+    }
+    argv_copy[argc] = NULL;
+
+    setlocale(LC_ALL, oldloc);
+    PyMem_Free(oldloc);
+
+
+    Py_SetProgramName(argv_copy[0]);
+    Py_Initialize();
+    //Py_VerboseFlag+=2;
+    PySys_SetArgv(argc, argv_copy);
+    RunMainFromImporter(argv_copy[0]);
+    Py_Finalize();
+}

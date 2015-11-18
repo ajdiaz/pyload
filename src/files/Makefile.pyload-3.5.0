@@ -1,0 +1,2 @@
+pyload: Modules/pyload.o $(LIBRARY) $(LDLIBRARY) $(PY3LIBRARY)
+	$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) -Os -o $@ Modules/pyload.o $(PY_CORE_CFLAGS) $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)

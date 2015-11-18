@@ -1,0 +1,3 @@
+pyload: Modules/pyload.o $(LIBRARY) $(LDLIBRARY)
+	$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@  Modules/pyload.o $(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)  
+

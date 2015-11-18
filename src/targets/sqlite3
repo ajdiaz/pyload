@@ -1,0 +1,16 @@
+#! /bin/bash
+
+target sqlite3:
+sqlite3 () {
+  uncompress "$SQLITE3_URL" "$BUILD/sqlite3"
+
+  cd "$BUILD/sqlite3"
+  ${CC} -c -O2 -DSQLITE_ENABLE_STAT2 -DSQLITE_ENABLE_FTS3 \
+               -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_RTREE \
+               -W -Wall sqlite3.c || exit 1
+  ${AR} cr libsqlite3.a sqlite3.o
+  ${RANLIB} libsqlite3.a
+
+  addlibrary libsqlite3.a
+  addheader sqlite3.h
+}

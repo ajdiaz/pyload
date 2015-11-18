@@ -1,0 +1,117 @@
+#include <stdio.h>
+#include <Python.h>
+#include <locale.h>
+#include <zlib.h>
+
+
+static int RunModule(char *module, int set_argv0)
+{
+    PyObject *runpy, *runmodule, *runargs, *result;
+    runpy = PyImport_ImportModule("runpy");
+    if (runpy == NULL) {
+        fprintf(stderr, "Could not import runpy module\n");
+        return -1;
+    }
+    runmodule = PyObject_GetAttrString(runpy, "_run_module_as_main");
+    if (runmodule == NULL) {
+        fprintf(stderr, "Could not access runpy._run_module_as_main\n");
+        Py_DECREF(runpy);
+        return -1;
+    }
+    runargs = Py_BuildValue("(si)", module, set_argv0);
+    if (runargs == NULL) {
+        fprintf(stderr,
+            "Could not create arguments for runpy._run_module_as_main\n");
+        Py_DECREF(runpy);
+        Py_DECREF(runmodule);
+        return -1;
+    }
+    result = PyObject_Call(runmodule, runargs, NULL);
+    if (result == NULL) {
+        PyErr_Print();
+    }
+    Py_DECREF(runpy);
+    Py_DECREF(runmodule);
+    Py_DECREF(runargs);
+    if (result == NULL) {
+        return -1;
+    }
+    Py_DECREF(result);
+    return 0;
+}
+
+
+static int RunMainFromImporter(char *filename)
+{
+    PyObject *argv0 = NULL, *importer = NULL;
+
+    if ((argv0 = PyString_FromString(filename)) &&
+        (importer = PyImport_GetImporter(argv0)) &&
+        (importer->ob_type != &PyNullImporter_Type))
+    {
+             /* argv0 is usable as an import source, so
+                    put it in sys.path[0] and import __main__ */
+        PyObject *sys_path = NULL;
+        if ((sys_path = PySys_GetObject("path")) &&
+            !PyList_SetItem(sys_path, 0, argv0))
+        {
+            Py_INCREF(argv0);
+            Py_DECREF(importer);
+            sys_path = NULL;
+            return RunModule("__main__", 0) != 0;
+        }
+    }
+    Py_XDECREF(argv0);
+    Py_XDECREF(importer);
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        return 1;
+    }
+    return -1;
+}
+
+
+int
+main(int argc, char *argv[])
+{
+    char **argv_copy;
+    char *oldloc;
+    int i;
+
+
+    argv_copy = (char **)malloc(sizeof(char*) * (argc+1));
+    if (!argv_copy) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
+    oldloc = strdup(setlocale(LC_ALL, NULL));
+    if (!oldloc) {
+        fprintf(stderr, "out of memory\n");
+        return 1;
+    }
+
+    setlocale(LC_ALL, "");
+    for (i = 0; i < argc; i++) {
+        argv_copy[i] =  strdup(argv[i]);
+        if (!argv_copy[i]) {
+            free(oldloc);
+            fprintf(stderr, "Fatal Python error: "
+                            "unable to decode the command line argument #%i\n",
+                            i + 1);
+            return 1;
+        }
+    }
+    argv_copy[argc] = NULL;
+
+    setlocale(LC_ALL, oldloc);
+    PyMem_Free(oldloc);
+
+
+    Py_SetProgramName(argv_copy[0]);
+    Py_Initialize();
+    //Py_VerboseFlag+=2;
+    PySys_SetArgv(argc, argv_copy);
+    RunMainFromImporter(argv_copy[0]);
+    Py_Finalize();
+}

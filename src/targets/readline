@@ -1,0 +1,19 @@
+#! /bin/bash
+
+target readline:
+readline () {
+  uncompress "$READLINE_URL" "$BUILD/readline"
+
+  cd "$BUILD/readline"
+  ./configure --disable-shared
+
+  replace Makefile '^CFLAGS[ ]*=' '\s-O\d*(?!\S)' ' -O2 '
+  replace Makefile '^CFLAGS[ ]*=' '\s-g\s' ' '
+
+  make || exit 1
+
+  addlibrary libreadline.a
+  mkdir -p "${INCLUDE_DIR}/readline"
+  cp -r --copy-contents rlstdc.h rltypedefs.h keymaps.h tilde.h readline.h \
+    history.h chardefs.h "${INCLUDE_DIR}/readline"
+}

@@ -1,0 +1,12 @@
+*.pyc
+*.sw[apo]
+*.egg
+*.egg-info
+doc/build
+build
+dist
+tags
+.coverage
+__pycache__
+resources/pyload
+resources/xlib.zip

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+target libevent:
+libevent () {
+  uncompress "$LIBEVENT_URL" "$BUILD/libevent"
+  cd "$BUILD/libevent"
+	./configure --enable-openssl --disable-debug-mode \
+	  				  --disable-shared --disable-libevent-regress
+
+  fake_config_guess
+
+  replace Makefile '^CFLAGS[ ]*=' '\s-g(?!\S)'
+  replace Makefile '^CFLAGS[ ]*=' '\s-O\d*(?!\S)' ' -O2 '
+
+	make ./include/event2/event-config.h libevent_core.la libevent.la || exit 1
+	ar cr  libevent_evhttp.a bufferevent_sock.o http.o listener.o
+  ranlib libevent_evhttp.a
+
+  addlibrary .libs/libevent_core.a ./libevent_evhttp.a
+  addheader include/event2
+}

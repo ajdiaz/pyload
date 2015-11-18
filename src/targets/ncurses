@@ -1,0 +1,21 @@
+#! /bin/bash
+
+set -e
+target ncurses:
+ncurses () {
+  uncompress "$NCURSES_URL" "$BUILD/ncurses"
+
+  cd "$BUILD/ncurses"
+  fake_config_guess config.guess
+
+  ./configure  --without-cxx 
+
+  replace Makefile '^CFLAGS[ ]*=' '\s-O\d*(?!\S)' ' -O2 '
+  replace Makefile '^CFLAGS[ ]*=' '\s-g\s'
+
+  make || exit 1
+
+  addlibrary ./lib/*.a
+  addheader ./include/*.h
+  ln -sf ${INCLUDE_DIR}/curses.h ${INCLUDE_DIR}/ncurses.h
+}

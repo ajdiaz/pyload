@@ -1,0 +1,16 @@
+#! /bin/bash
+
+target bzip2:
+bzip2 () {
+  uncompress "$BZIP2_URL" "$BUILD/bzip2"
+
+  cd "$BUILD/bzip2"
+  replace Makefile '^CFLAGS[ ]*=' '\s-O\d*(?!\S)' ' -O3 '
+  replace Makefile '^CFLAGG[ ]*=' '\s-O\d*(?!\S)' ' -O3 '
+  replace Makefile '^CFLAGS[ ]*=' '\s-g\s'
+
+  make CC="${CC}" || exit 1
+
+  addlibrary ./libbz2.a
+  addheader ./bzlib.h
+}

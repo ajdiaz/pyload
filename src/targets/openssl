@@ -1,0 +1,23 @@
+#! /bin/bash
+
+target openssl: zlib
+openssl () {
+  uncompress "$OPENSSL_URL" "$BUILD/openssl"
+
+  cd "$BUILD/openssl"
+  replace Makefile '^CFLAG[ ]*=' '\s(?:-g|-arch\s+\S+)(?!\S)'
+  replace Makefile '^CFLAG[ ]*=' '\s-O\d*(?!\S)' ' -O2 '
+  replace Makefile '^CFLAG[ ]*=' '\s-D(DSO_DLFCN|HAVE_DLFCN_H)(?!\S)'
+
+  case $ARCH in
+    x86_64) build="linux-x86_64";;
+    i686|i386) build=linux-generic32;;
+    *) target_fatal openssl "Invalid architecture";;
+  esac
+  ./Configure no-shared $build no-idea no-mdc2 zlib \
+              no-rc5 zlib "enable-tlsext" no-ssl2
+  make depend && make build_libs || exit 1
+
+  addlibrary libssl.a libcrypto.a
+  addheader include/openssl
+}

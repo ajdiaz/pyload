@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+target toolchain: uclibc _export_paths
+_export_paths () {
+  export PATH="$BUILD/toolchain/bin:$PATH"
+  #export LD_LIBRARY_PATH="${BUILD}/toolchain/lib:${LD_LIBRARY_PATH}"
+}
+
+
+uclibc () {
+  uncompress "$UCLIBC_URL" "$BUILD/toolchain"
+
+  ln -sf "${BUILD}/toolchain/lib" "${LIBRARY_DIR}"
+  ln -sf "${BUILD}/toolchain/include" "${INCLUDE_DIR}"
+}

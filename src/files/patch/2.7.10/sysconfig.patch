@@ -1,0 +1,12 @@
+--- Lib/orig	2015-10-21 23:28:05.963001948 +0200
++++ Lib/sysconfig.py	2015-10-21 23:28:26.956979142 +0200
+@@ -400,7 +400,8 @@
+ def _init_posix(vars):
+     """Initialize the module as appropriate for POSIX systems."""
+     # _sysconfigdata is generated at build time, see _generate_posix_vars()
+-    from _sysconfigdata import build_time_vars
++    build_time_vars = {}
++    #from _sysconfigdata import build_time_vars
+     vars.update(build_time_vars)
+ 
+ def _init_non_posix(vars):
