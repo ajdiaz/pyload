@@ -4,7 +4,7 @@ Pyload
 Binary static generator for python apps
 =======================================
 
-Synopsys
+Synopsis
 --------
 
 For distribution purposes many times you want to compile all your python
