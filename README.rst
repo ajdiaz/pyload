@@ -1,8 +1,8 @@
 ======
 Pyload
 ======
-Binary static generator for python apps
-=======================================
+
+*Binary static generator for python apps*
 
 Synopsis
 --------
@@ -14,7 +14,7 @@ golang) does. While python do not support a native way to do this,
 
 Pyload is just a small binary (compiled for some architectures for now),
 which simply loads a ZIP file from the same binary, and run it via
-`zipimport <https://docs.python.org/3.4/library/zipimport.html>` module.
+`zipimport <https://docs.python.org/3.4/library/zipimport.html>`_ module.
 
 The python binary code (libpython) is statically linked to the pyload
 binary, and required standard libraries are also provided inside the binary
@@ -127,8 +127,8 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Note
-~~~~
-| Some software required by pyload is conforming other licenses, check the
-| license of each component to include them in your projects.
 
+.. admonition:: Note
+
+  Some software required by pyload is conforming other licenses, check the
+  license of each component to include them in your projects.
