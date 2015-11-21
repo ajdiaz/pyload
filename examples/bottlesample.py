@@ -9,4 +9,4 @@ import bottle
 def index():
     return {'key': 'value'}
 
-bottle.run()
+bottle.run(port=8080, host="0.0.0.0")
