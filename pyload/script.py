@@ -54,7 +54,12 @@ def directory():
 
 
 class PyLoadBuilder(object):
-    def __init__(self, packages, out_dir, include=INCLUDE, exclude=EXCLUDE):
+    def __init__(self,
+                 packages,
+                 out_dir,
+                 include=INCLUDE,
+                 exclude=EXCLUDE,
+                 single=False):
         """Create a new pyload builder object.
 
         :param packages: a list of valid package source (in any format
@@ -65,20 +70,35 @@ class PyLoadBuilder(object):
             source packages.
         :param exclude: a list of packages/modules that should not be packed
             in the resulting binary.
+        :param single: if true use packages as standalone python files
         """
         self.packages = packages
         self.out_dir = out_dir
         self.include = include
         self.exclude = exclude
+        self.contents = {}
+        self.single = single
+
+        if single:
+            for fname in self.packages:
+                with open(fname, 'r') as f:
+                    self.contents[fname] = f.read().split('\n')
 
     def install_packages(self, target_dir):
         """Install required packages in target_dir passed as argument"""
         cmd = ['install', '--target=%s' % (target_dir,)]
-        cmd.extend(self.packages)
+        if not self.single:
+            cmd.extend(self.packages)
+
         cmd.extend(self.include)
         pip.main(cmd)
 
     def scripts(self, target_dir, binaries):
+        if self.single:
+            for name in self.packages:
+                if not binaries or name in binaries:
+                    yield (name, None, os.path.splitext(name)[0])
+            return
         # add the temporary dir to the current working_set
         pkg_resources.working_set.add_entry(target_dir)
 
@@ -140,12 +160,15 @@ class PyLoadBuilder(object):
                 "  pass"
             ])
 
-        lines.extend([
-            "import %s" % mod
-        ])
+        if self.single:
+            lines = self.contents[mod]
+        else:
+            lines.extend([
+                "import %s" % mod
+            ])
 
-        if fun:
-            lines.append("%s.%s()" % (mod, fun,))
+            if fun:
+                lines.append("%s.%s()" % (mod, fun,))
 
         lib.writestr("__main__.py", b("\n".join(lines)))
 
@@ -182,6 +205,9 @@ class PyLoadBuilder(object):
             for mod, fun, name in self.scripts(tmp, binaries):
                 out_file = os.path.join(self.out_dir, name)
 
+                if not os.path.exists(self.out_dir):
+                    os.makedirs(self.out_dir)
+
                 with tempfile.TemporaryFile() as f:
                     with zipfile.PyZipFile(f, 'a', zipmode) as lib:
                         self.add_libraries(tmp, lib, compile_python)
@@ -216,6 +242,11 @@ def main():
                         help='The folder where resulting binaries will '
                              'stored')
 
+    parser.add_argument('-s', '--single', dest='single',
+                        action='store_true', default=False,
+                        help='If set, argument is threaten as standalone '
+                             'python script file')
+
     parser.add_argument('-I', '--include', dest='include',
                         action='append', default=INCLUDE,
                         help='Packages to add to the binary which are not '
@@ -248,7 +279,8 @@ def main():
         args.arguments,
         args.out_dir,
         args.include,
-        args.exclude)
+        args.exclude,
+        args.single)
 
     builder.create_binaries(
         args.binaries,
