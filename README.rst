@@ -53,6 +53,13 @@ Just type::
 Where package could by any pip valid package, like file path, a tar.gz file,
 a git repository and so on...
 
+You can also create a binary for single python script::
+
+  pyload -s <file.py>
+
+Note that in that case you cannot get any dependencies automagically, and
+you need to specify them with ``--include`` flag.
+
 Other valid options are available typing ``pyload -h``.
 
 
