@@ -242,6 +242,10 @@ def main():
                         help='The folder where resulting binaries will '
                              'stored')
 
+    parser.add_argument('-c', '--compress', dest='compress',
+                        action='store_true', default=False,
+                        help='If set, the payload will be compressed.')
+
     parser.add_argument('-s', '--single', dest='single',
                         action='store_true', default=False,
                         help='If set, argument is threaten as standalone '
@@ -275,6 +279,11 @@ def main():
 
     args = parser.parse_args()
 
+    if args.compress:
+        zipmode = zipfile.ZIP_DEFLATED
+    else:
+        zipmode = zipfile.ZIP_STORED
+
     builder = PyLoadBuilder(
         args.arguments,
         args.out_dir,
@@ -284,6 +293,6 @@ def main():
 
     builder.create_binaries(
         args.binaries,
-        zipfile.ZIP_STORED,
+        zipmode,
         args.patch,
         args.compile)
