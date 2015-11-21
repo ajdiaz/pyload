@@ -37,12 +37,9 @@ Installation
 
 Just install as any other python package::
 
-  pip install pyload
+  easy_install pyload
 
-**Installation might take a while. Be patient!**
-
-Please note that pyload only works in i686 and x86_64 architecture on Linux
-systems.
+Please note that pyload only works in x86_64 architecture on Linux systems.
 
 
 Usage
