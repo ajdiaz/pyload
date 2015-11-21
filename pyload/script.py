@@ -106,9 +106,6 @@ class PyLoadBuilder(object):
                      for p in pkg_resources.working_set}
 
         for dist in [x for x in installed.values()]:
-            if not dist.location.startswith(target_dir):
-                continue
-
             if dist.has_metadata('entry_points.txt'):
                 enabled = False
                 for line in dist.get_metadata_lines('entry_points.txt'):
